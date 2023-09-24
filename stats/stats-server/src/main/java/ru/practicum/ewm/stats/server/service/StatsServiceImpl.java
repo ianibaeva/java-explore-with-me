@@ -12,6 +12,7 @@ import ru.practicum.ewm.stats.server.repository.StatsRepository;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -39,14 +40,23 @@ public class StatsServiceImpl implements StatsService {
         LocalDateTime endDate = LocalDateTime.parse(end, FORMATTER);
 
         List<ViewStats> result;
-        if (unique) {
-            result = statsRepository.getStatsByUrisAndUnique(startDate, endDate, uris);
+        if (uris == null || uris.isEmpty()) {
+            if (unique) {
+                result = statsRepository.getStatsByUnique(startDate, endDate);
+            } else {
+                result = statsRepository.getStatsByUris(startDate, endDate);
+            }
         } else {
-            result = statsRepository.getStats(startDate, endDate, uris);
+            if (unique) {
+                result = statsRepository.getStatsByUrisAndUnique(startDate, endDate, uris);
+            } else {
+                result = statsRepository.getStats(startDate, endDate, uris);
+            }
         }
 
         return result.stream()
                 .map(StatsMapper::toStatsDto)
+                .sorted(Comparator.comparing(ViewStatsDto::getHits).reversed())
                 .collect(Collectors.toList());
     }
 }
