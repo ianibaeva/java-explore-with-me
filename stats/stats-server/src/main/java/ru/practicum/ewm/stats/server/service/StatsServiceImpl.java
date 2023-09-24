@@ -40,17 +40,17 @@ public class StatsServiceImpl implements StatsService {
         LocalDateTime endDate = LocalDateTime.parse(end, FORMATTER);
 
         List<ViewStats> result;
-        if (uris == null || uris.isEmpty()) {
-            if (unique) {
+        if (unique) {
+            if (uris == null || uris.isEmpty()) {
                 result = statsRepository.getStatsByUnique(startDate, endDate);
             } else {
-                result = statsRepository.getStatsByUris(startDate, endDate);
+                result = statsRepository.getStatsByUrisAndUnique(startDate, endDate, uris);
             }
         } else {
-            if (unique) {
-                result = statsRepository.getStatsByUrisAndUnique(startDate, endDate, uris);
+            if (uris == null || uris.isEmpty()) {
+                result = statsRepository.getStats(startDate, endDate);
             } else {
-                result = statsRepository.getStats(startDate, endDate, uris);
+                result = statsRepository.getStatsByUris(startDate, endDate, uris);
             }
         }
 
