@@ -2,8 +2,6 @@ package ru.practicum.ewm.stats.server.model;
 
 import lombok.*;
 
-import javax.persistence.Entity;
-
 @Getter
 @Setter
 @Builder
