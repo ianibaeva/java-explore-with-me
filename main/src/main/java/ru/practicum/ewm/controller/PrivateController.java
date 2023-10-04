@@ -9,6 +9,10 @@ import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
 import ru.practicum.ewm.event.dto.UpdateEventUserRequest;
 import ru.practicum.ewm.event.service.EventService;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
+import ru.practicum.ewm.request.dto.EventRequestStatusUpdateResult;
+import ru.practicum.ewm.request.dto.ParticipationRequestDto;
+import ru.practicum.ewm.request.service.RequestService;
 
 import javax.validation.Valid;
 import javax.validation.constraints.Positive;
@@ -22,10 +26,11 @@ import java.util.List;
 public class PrivateController {
 
     private final EventService eventService;
+    private final RequestService requestService;
 
     @PostMapping("/{userId}/events")
     @ResponseStatus(HttpStatus.CREATED)
-    public EventFullDto addEvent(@PathVariable("userId") Long userId,
+    public EventFullDto addEvent(@PathVariable Long userId,
                                  @RequestBody @Valid NewEventDto newEventDto) {
         return eventService.addEvent(userId, newEventDto);
     }
@@ -39,14 +44,47 @@ public class PrivateController {
 
     @GetMapping("/{userId}/events/{eventId}")
     public EventFullDto getUserEvent(@PathVariable Long userId,
-                                              @PathVariable Long eventId) {
+                                     @PathVariable Long eventId) {
         return eventService.getUserEventById(userId, eventId);
     }
 
     @PatchMapping("/{userId}/events/{eventId}")
     public EventFullDto updateEventByUser(@PathVariable Long userId,
-                                             @PathVariable Long eventId,
-                                             @RequestBody UpdateEventUserRequest updateEventUserRequest) {
+                                          @PathVariable Long eventId,
+                                          @RequestBody UpdateEventUserRequest updateEventUserRequest) {
         return eventService.updateEventByUser(userId, eventId, updateEventUserRequest);
+    }
+
+    @GetMapping("/{userId}/requests")
+    public List<ParticipationRequestDto> getRequestsById(@PathVariable Long userId) {
+        return requestService.getRequestsById(userId);
+    }
+
+    @PostMapping("/{userId}/requests")
+    @ResponseStatus(HttpStatus.CREATED)
+    public ParticipationRequestDto createRequest(@PathVariable Long userId,
+                                                 @RequestParam Long eventId) {
+        return requestService.addRequest(userId, eventId);
+    }
+
+    @PatchMapping("/{userId}/requests/{requestId}/cancel")
+    public ParticipationRequestDto cancelRequest(@PathVariable Long userId,
+                                                 @PathVariable Long requestId) {
+        return requestService.cancelRequest(userId, requestId);
+    }
+
+    @GetMapping("/{userId}/events/{eventId}/requests")
+    public List<ParticipationRequestDto> getEventRequests(@PathVariable Long userId,
+                                                          @PathVariable Long eventId) {
+        return requestService.getEventRequests(userId, eventId);
+    }
+
+    @PatchMapping("/{userId}/events/{eventId}/requests")
+    public EventRequestStatusUpdateResult updateEventRequest(@PathVariable Long userId,
+                                                             @PathVariable Long eventId,
+                                                             @RequestBody EventRequestStatusUpdateRequest
+                                                                         eventRequestStatusUpdateRequest) {
+
+        return requestService.updateEventRequest(userId, eventId, eventRequestStatusUpdateRequest);
     }
 }
