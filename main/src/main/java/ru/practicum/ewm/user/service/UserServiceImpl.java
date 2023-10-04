@@ -4,6 +4,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.user.dto.NewUserRequest;
 import ru.practicum.ewm.user.dto.UserDto;
 import ru.practicum.ewm.exception.ObjectNotFoundException;
@@ -26,6 +27,14 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional
     public UserDto addUser(NewUserRequest newUserRequest) {
+        String name = newUserRequest.getName();
+
+        if (userRepository.existsByName(name)) {
+            throw new ConflictException(
+                    "Username already exists"
+            );
+        }
+
         User user = toUser(newUserRequest);
 
         return toUserDto(userRepository.save(user));
@@ -49,7 +58,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsById(userId)) {
             userRepository.deleteById(userId);
         } else {
-            throw new ObjectNotFoundException(String.format("User with ID: %s not found", userId));
+            throw new ObjectNotFoundException(String.format(
+                    "User with ID: %s not found", userId
+            ));
         }
     }
 }

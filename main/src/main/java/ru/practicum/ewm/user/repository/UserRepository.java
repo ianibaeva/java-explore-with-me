@@ -10,4 +10,6 @@ import java.util.List;
 public interface UserRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE (:ids IS NULL OR u.id IN :ids)")
     List<User> getAllUsersByIdInOrPageable(List<Long> ids, Pageable pageable);
+
+    boolean existsByName(String name);
 }

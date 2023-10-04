@@ -10,11 +10,11 @@ import ru.practicum.ewm.category.dto.NewCategoryDto;
 import ru.practicum.ewm.category.mapper.CategoryMapper;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.repository.CategoryRepository;
+import ru.practicum.ewm.event.repository.EventRepository;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.ObjectNotFoundException;
 
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.category.mapper.CategoryMapper.toCategory;
@@ -25,10 +25,19 @@ import static ru.practicum.ewm.category.mapper.CategoryMapper.toCategoryDto;
 public class CategoryServiceImpl implements CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final EventRepository eventRepository;
 
     @Override
     @Transactional
     public CategoryDto addCategory(NewCategoryDto newCategoryDto) {
+        String name = newCategoryDto.getName();
+
+        if (categoryRepository.existsByName(name)) {
+            throw new ConflictException(
+                    "Category name already exists"
+            );
+        }
+
         Category category = toCategory(newCategoryDto);
 
         return toCategoryDto(categoryRepository.save(category));
@@ -38,7 +47,15 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public void deleteCategory(Long catId) {
         if (!categoryRepository.existsById(catId)) {
-            throw new ObjectNotFoundException(String.format("Category with ID: %s was not found", catId));
+            throw new ObjectNotFoundException(String.format(
+                    "Category with ID: %s was not found", catId
+            ));
+        }
+
+         if (!eventRepository.findAllByCategoryId(catId).isEmpty()) {
+            throw new ConflictException(
+                    "The category is not empty"
+            );
         }
 
         categoryRepository.deleteById(catId);
@@ -48,11 +65,15 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional
     public CategoryDto updateCategory(Long catId, NewCategoryDto newCategoryDto) {
         Category category = categoryRepository.findById(catId).orElseThrow(() -> {
-            throw new ObjectNotFoundException(String.format("Category with ID: %s was not found", catId));
+            throw new ObjectNotFoundException(String.format(
+                    "Category with ID: %s was not found", catId
+            ));
         });
 
-        if (category.getName().equals(newCategoryDto.getName())) {
-            throw new ConflictException("There is already a category named - " + newCategoryDto.getName());
+        if (categoryRepository.existsByName(newCategoryDto.getName())) {
+            throw new ConflictException(
+                    "There is already a category named - " + newCategoryDto.getName()
+            );
         }
 
         category.setName(newCategoryDto.getName());
@@ -74,7 +95,9 @@ public class CategoryServiceImpl implements CategoryService {
     @Transactional(readOnly = true)
     public CategoryDto getCategoryById(Long catId) {
         Category category = categoryRepository.findById(catId).orElseThrow(() -> {
-            throw new ObjectNotFoundException(String.format("Category with ID: %s was not found", catId));
+            throw new ObjectNotFoundException(String.format(
+                    "Category with ID: %s was not found", catId
+            ));
         });
 
         return toCategoryDto(category);
