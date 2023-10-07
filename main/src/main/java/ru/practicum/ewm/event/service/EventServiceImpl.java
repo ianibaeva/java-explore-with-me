@@ -1,8 +1,10 @@
 package ru.practicum.ewm.event.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.model.Category;
@@ -14,6 +16,7 @@ import ru.practicum.ewm.event.enums.StateAction;
 import ru.practicum.ewm.event.mapper.EventMapper;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
+import ru.practicum.ewm.exception.BadRequestException;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.ObjectNotFoundException;
 import ru.practicum.ewm.exception.ValidationException;
@@ -31,6 +34,7 @@ import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.event.mapper.EventMapper.toEventUpdateUserRequest;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class EventServiceImpl implements EventService {
@@ -43,27 +47,29 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto addEvent(Long userId, NewEventDto newEventDto) {
-        validateEventDate(newEventDto.getEventDate());
-        Event event = EventMapper.toEvent(newEventDto);
+        if (newEventDto.getEventDate().isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new ValidationException("The date and time at which the event is scheduled cannot be earlier than two hours from the current moment");
+        }
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ObjectNotFoundException(String.format(
                         "User with ID: %s not found", userId
                 )));
-        event.setInitiator(user);
-
-        event.setCreatedOn(LocalDateTime.now());
 
         Category category = categoryRepository.findById(newEventDto.getCategory())
                 .orElseThrow(() -> new ObjectNotFoundException(
                         "Category not found"
                 ));
-        event.setCategory(category);
 
-        event.setState(State.PENDING);
-        event.setConfirmedRequests(0);
+        Event newEvent = EventMapper.toEvent(newEventDto);
+        newEvent.setInitiator(user);
+        newEvent.setCategory(category);
+        newEvent.setCreatedOn(LocalDateTime.now());
+        newEvent.setState(State.PENDING);
+        newEvent.setConfirmedRequests(0);
+        newEvent.setViews(0);
 
-        return EventMapper.toEventFullDto(eventRepository.save(event));
+        return EventMapper.toEventFullDto(eventRepository.save(newEvent));
     }
 
     @Override
@@ -135,16 +141,22 @@ public class EventServiceImpl implements EventService {
                         ));
                 event.setCategory(category);
             }
-            if (updateEventUserRequest.getEventDate() != null) {
-                validateEventDate(updateEventUserRequest.getEventDate());
-                event.setEventDate(updateEventUserRequest.getEventDate());
+            if (updateEventUserRequest.getEventDate() != null
+                    && LocalDateTime.now().plusHours(2).isAfter(updateEventUserRequest.getEventDate())) {
+                throw new BadRequestException("The date and time for which the event is scheduled cannot be earlier than " +
+                        "two hours from the current moment.");
             }
-            if (updateEventUserRequest.getStateAction().equals(StateAction.SEND_TO_REVIEW)) {
-                event.setState(State.PENDING);
-            } else {
-                event.setState(State.CANCELED);
+                //event.setEventDate(updateEventUserRequest.getEventDate());
+            if (updateEventUserRequest.getTitle() != null) {
+                event.setTitle(updateEventUserRequest.getTitle());
             }
-            toEventUpdateUserRequest(updateEventUserRequest, event);
+            if (updateEventUserRequest.getStateAction() != null) {
+                if (updateEventUserRequest.getStateAction().equals(StateAction.SEND_TO_REVIEW)) {
+                    event.setState(State.PENDING);
+                } else {
+                    event.setState(State.CANCELED);
+                }
+            }
         }
         eventRepository.save(event);
         return EventMapper.toEventFullDto(event);
@@ -158,12 +170,16 @@ public class EventServiceImpl implements EventService {
 
         List<Event> events = new ArrayList<>();
 
-        validateEventDate(rangeEnd);
-
-        if (rangeEnd.isBefore(rangeStart)) {
-            throw new ValidationException(
-                    "End of range cannot be before start"
-            );
+        if (categories != null && categories.size() == 1 && categories.get(0).equals(0L)) {
+            categories = null;
+        }
+        if (rangeStart == null) {
+            rangeStart = LocalDateTime.now();
+        } else if (rangeStart.isBefore(LocalDateTime.now().plusHours(2))) {
+            throw new BadRequestException("Event date for which the event is scheduled cannot be earlier than two hours from the current moment. Value: " + rangeStart);
+        }
+        if (rangeEnd == null) {
+            rangeEnd = LocalDateTime.now().plusYears(100);
         }
 
         Pageable pageable = PageRequest.of(from, size);
@@ -196,12 +212,17 @@ public class EventServiceImpl implements EventService {
                                              List<Long> categories, LocalDateTime rangeStart,
                                              LocalDateTime rangeEnd, Integer from, Integer size) {
 
-        validateEventDate(rangeEnd);
-
         Pageable pageable = PageRequest.of(from, size);
 
-        return eventRepository.findAdminEvents
-                        (users, states, categories, rangeStart, rangeEnd, pageable)
+        if (rangeStart == null) {
+            rangeStart = LocalDateTime.now();
+        }
+        if (rangeEnd == null) {
+            rangeEnd = LocalDateTime.now().plusYears(100);
+        }
+
+        List<Event> list = eventRepository.findAdminEvents(users, states, categories, rangeStart, rangeEnd, pageable);
+        return list
                 .stream()
                 .map(EventMapper::toEventFullDto)
                 .collect(Collectors.toList());
@@ -210,17 +231,22 @@ public class EventServiceImpl implements EventService {
     @Override
     @Transactional
     public EventFullDto updateEventByAdmin(Long eventId, UpdateEventAdminRequest updateEventAdminRequest) {
-        if (updateEventAdminRequest.getEventDate() != null) {
-            validateEventDate(updateEventAdminRequest.getEventDate());
-        }
-
         Event event = eventRepository.findById(eventId)
                 .orElseThrow(() -> new ObjectNotFoundException(String.format(
                         "Event with ID: %s was not found", eventId
         )));
 
+        if (updateEventAdminRequest.getEventDate() != null
+                && LocalDateTime.now().plusHours(1).isAfter(updateEventAdminRequest.getEventDate())) {
+            throw new BadRequestException("The date and time for which the event is scheduled cannot be earlier than " +
+                    "one hour from the current moment.");
+        }
+
         if (updateEventAdminRequest.getAnnotation() != null) {
             event.setAnnotation(updateEventAdminRequest.getAnnotation());
+        }
+        if (updateEventAdminRequest.getEventDate() != null) {
+            event.setEventDate(updateEventAdminRequest.getEventDate());
         }
         if (updateEventAdminRequest.getDescription() != null) {
             event.setDescription(updateEventAdminRequest.getDescription());
@@ -238,14 +264,16 @@ public class EventServiceImpl implements EventService {
             event.setTitle(updateEventAdminRequest.getTitle());
         }
 
-        if (updateEventAdminRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
-            if (event.getState().equals(State.PENDING)) {
-                event.setState(State.PUBLISHED);
-                event.setPublishedOn(LocalDateTime.now());
-            } else {
-                throw new ConflictException(
-                        "The event cannot be published due to its incorrect status: PENDING"
-                );
+        if (updateEventAdminRequest.getStateAction() != null) {
+            if (updateEventAdminRequest.getStateAction().equals(StateAction.PUBLISH_EVENT)) {
+                if (event.getState().equals(State.PENDING)) {
+                    event.setState(State.PUBLISHED);
+                    event.setPublishedOn(LocalDateTime.now());
+                } else {
+                    throw new ConflictException(
+                            "The event cannot be published due to its incorrect status: PENDING"
+                    );
+                }
             }
         }
         if (updateEventAdminRequest.getStateAction() != null) {
@@ -281,14 +309,6 @@ public class EventServiceImpl implements EventService {
 
         event.setViews(event.getViews() + 1);
         return EventMapper.toEventFullDto(event);
-    }
-
-    private void validateEventDate(LocalDateTime eventDate) {
-        if (eventDate.isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new ValidationException(String.format(
-                    "Event date (%s) must be at least 2 hours ahead of the current time", eventDate
-            ));
-        }
     }
 
     private void saveEndpointHit(HttpServletRequest request) {

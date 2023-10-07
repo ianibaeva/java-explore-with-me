@@ -1,11 +1,13 @@
 package ru.practicum.ewm.request.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.event.enums.State;
 import ru.practicum.ewm.event.model.Event;
 import ru.practicum.ewm.event.repository.EventRepository;
+import ru.practicum.ewm.exception.BadRequestException;
 import ru.practicum.ewm.exception.ConflictException;
 import ru.practicum.ewm.exception.ObjectNotFoundException;
 import ru.practicum.ewm.request.dto.EventRequestStatusUpdateRequest;
@@ -26,6 +28,7 @@ import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.request.mapper.RequestMapper.toParticipationRequestDto;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {
@@ -52,6 +55,11 @@ public class RequestServiceImpl implements RequestService {
     @Override
     @Transactional
     public ParticipationRequestDto addRequest(Long userId, Long eventId) {
+
+        if (eventId == null || eventId == 0) {
+            throw new BadRequestException("Event ID is required");
+        }
+
         User user = userRepository.findById(userId).orElseThrow(
                 () -> new ObjectNotFoundException(String.format(
                         "User with ID: %s was not found", userId

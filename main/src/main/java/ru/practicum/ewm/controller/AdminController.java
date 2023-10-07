@@ -1,6 +1,7 @@
 package ru.practicum.ewm.controller;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
@@ -8,6 +9,10 @@ import org.springframework.web.bind.annotation.*;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.dto.NewCategoryDto;
 import ru.practicum.ewm.category.service.CategoryService;
+import ru.practicum.ewm.compilation.dto.CompilationDto;
+import ru.practicum.ewm.compilation.dto.NewCompilationDto;
+import ru.practicum.ewm.compilation.dto.UpdateCompilationRequest;
+import ru.practicum.ewm.compilation.service.CompilationService;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.UpdateEventAdminRequest;
 import ru.practicum.ewm.event.enums.State;
@@ -19,11 +24,13 @@ import ru.practicum.ewm.util.Create;
 import ru.practicum.ewm.util.Update;
 
 import javax.validation.Valid;
+import javax.validation.constraints.Min;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("admin/")
 @RequiredArgsConstructor
@@ -33,6 +40,7 @@ public class AdminController {
     private final UserService userService;
     private final CategoryService categoryService;
     private final EventService eventService;
+    private final CompilationService compilationService;
 
     @PostMapping("/users")
     @ResponseStatus(HttpStatus.CREATED)
@@ -73,22 +81,42 @@ public class AdminController {
     }
 
     @GetMapping("/events")
-    public List<EventFullDto> getAdminEvents(@RequestParam List<Long> users,
-                                             @RequestParam (required = false) List<State> states,
-                                             @RequestParam List<Long> categories,
-                                             @RequestParam(required = false)
+    public List<EventFullDto> getAdminEvents(@RequestParam(required = false) List<Long> users,
+                                             @RequestParam(required = false) List<State> states,
+                                             @RequestParam(required = false) List<Long> categories,
+                                             @RequestParam(value = "rangeStart", required = false)
                                                  @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeStart,
-                                             @RequestParam(required = false)
+                                             @RequestParam(value = "rangeEnd", required = false)
                                                  @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime rangeEnd,
-                                             @RequestParam (name = "from", defaultValue = "0") Integer from,
-                                             @RequestParam (name = "size", defaultValue = "10") Integer size) {
+                                             @RequestParam(defaultValue = "0") @Min(0) Integer from,
+                                             @RequestParam(defaultValue = "10") @Min(1) Integer size) {
 
+        log.info("Admin GET request to get all events by params users-{}, states-{}, categories-{}" +
+                ",startTime-{}, endTime-{}", users,states,categories, rangeStart, rangeEnd);
         return eventService.getAdminEvents(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
     @PatchMapping("/events/{eventId}")
     public EventFullDto updateEventByAdmin(@PathVariable Long eventId,
-                                         @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest) {
+                                           @RequestBody @Valid UpdateEventAdminRequest updateEventAdminRequest) {
         return eventService.updateEventByAdmin(eventId, updateEventAdminRequest);
+    }
+
+    @PostMapping("/compilations")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CompilationDto createCompilation(@RequestBody @Valid NewCompilationDto newCompilationDto) {
+        return compilationService.addCompilation(newCompilationDto);
+    }
+
+    @DeleteMapping("/compilations/{compId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteCompilation(@PathVariable("compId") Long compId) {
+        compilationService.deleteCompilation(compId);
+    }
+
+    @PatchMapping("/compilations/{compId}")
+    public CompilationDto updateCompilation(@PathVariable("compId") Long compId,
+                                            @RequestBody @Valid UpdateCompilationRequest updateCompilationRequest) {
+        return compilationService.updateCompilation(compId, updateCompilationRequest);
     }
 }

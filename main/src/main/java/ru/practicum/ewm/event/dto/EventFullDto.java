@@ -10,6 +10,7 @@ import ru.practicum.ewm.user.dto.UserShortDto;
 import ru.practicum.ewm.user.model.User;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -42,7 +43,8 @@ public class EventFullDto {
 
     private Boolean paid;
 
-    private Long participantLimit;
+    @Builder.Default
+    private Long participantLimit = 0L;
 
     @JsonFormat(shape = JsonFormat.Shape.STRING, pattern = "yyyy-MM-dd HH:mm:ss")
     private LocalDateTime publishedOn;
@@ -53,13 +55,6 @@ public class EventFullDto {
     private State state;
 
     private String title;
-
-    @WhereJoinTable(clause = "status='CONFIRMED'")
-    @ManyToMany(cascade = CascadeType.PERSIST, fetch = FetchType.LAZY)
-    @JoinTable(name = "requests",
-            joinColumns = @JoinColumn(name = "event_id"),
-            inverseJoinColumns = @JoinColumn(name = "requester_id"))
-    private Set<User> participants = new HashSet<>();
 
     private Integer views;
 }

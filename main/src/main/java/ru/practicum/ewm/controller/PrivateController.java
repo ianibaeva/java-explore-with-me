@@ -15,6 +15,7 @@ import ru.practicum.ewm.request.dto.ParticipationRequestDto;
 import ru.practicum.ewm.request.service.RequestService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Positive;
 import javax.validation.constraints.PositiveOrZero;
 import java.util.List;
@@ -51,7 +52,7 @@ public class PrivateController {
     @PatchMapping("/{userId}/events/{eventId}")
     public EventFullDto updateEventByUser(@PathVariable Long userId,
                                           @PathVariable Long eventId,
-                                          @RequestBody UpdateEventUserRequest updateEventUserRequest) {
+                                          @RequestBody @Valid UpdateEventUserRequest updateEventUserRequest) {
         return eventService.updateEventByUser(userId, eventId, updateEventUserRequest);
     }
 
@@ -62,8 +63,8 @@ public class PrivateController {
 
     @PostMapping("/{userId}/requests")
     @ResponseStatus(HttpStatus.CREATED)
-    public ParticipationRequestDto createRequest(@PathVariable Long userId,
-                                                 @RequestParam Long eventId) {
+    public ParticipationRequestDto addRequest(@PathVariable Long userId,
+                                              @RequestParam(required = false) Long eventId) {
         return requestService.addRequest(userId, eventId);
     }
 

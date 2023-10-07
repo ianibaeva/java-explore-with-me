@@ -7,8 +7,10 @@ import ru.practicum.ewm.event.enums.State;
 import ru.practicum.ewm.event.model.Event;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface EventRepository extends JpaRepository<Event, Long> {
 
@@ -53,7 +55,9 @@ public interface EventRepository extends JpaRepository<Event, Long> {
             "AND e.eventDate > :rangeStart " +
             "AND (cast(:rangeEnd as date) IS NULL OR e.eventDate < :rangeEnd)")
     List<Event> findAdminEvents(List<Long> users, List<State> states, List<Long> categories,
-                          LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable);
+                                LocalDateTime rangeStart, LocalDateTime rangeEnd, Pageable pageable);
 
     Event findEventByIdAndAndState(Long eventId, State state);
+
+    Set<Event> getByIdIn(Collection<Long> ids);
 }

@@ -1,6 +1,7 @@
 package ru.practicum.ewm.category.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
 import static ru.practicum.ewm.category.mapper.CategoryMapper.toCategory;
 import static ru.practicum.ewm.category.mapper.CategoryMapper.toCategoryDto;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class CategoryServiceImpl implements CategoryService {
@@ -70,10 +72,12 @@ public class CategoryServiceImpl implements CategoryService {
             ));
         });
 
-        if (categoryRepository.existsByName(newCategoryDto.getName())) {
-            throw new ConflictException(
-                    "There is already a category named - " + newCategoryDto.getName()
-            );
+        if (!category.getName().equals((newCategoryDto.getName()))) {
+            if (categoryRepository.existsByName(newCategoryDto.getName())) {
+                throw new ConflictException(
+                        "There is already a category named - " + newCategoryDto.getName()
+                );
+            }
         }
 
         category.setName(newCategoryDto.getName());
