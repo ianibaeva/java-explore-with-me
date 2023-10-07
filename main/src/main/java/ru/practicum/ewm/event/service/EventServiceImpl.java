@@ -180,11 +180,9 @@ public class EventServiceImpl implements EventService {
         Pageable pageable = PageRequest.of(from, size);
 
         if (sort != null && sort.equals(EventSortType.EVENT_DATE)) {
-            events = eventRepository.findPublicSortByDate
-                    (text, categories, paid, rangeStart, rangeEnd, pageable);
+            events = eventRepository.findPublicSortByDate(text, categories, paid, rangeStart, rangeEnd, pageable);
         } else if (sort != null && sort.equals(EventSortType.VIEWS)) {
-            events = eventRepository.findPublicSortByViews
-                    (text, categories, paid, rangeStart, rangeEnd, pageable);
+            events = eventRepository.findPublicSortByViews(text, categories, paid, rangeStart, rangeEnd, pageable);
         }
         if (onlyAvailable) {
             events = events.stream()
