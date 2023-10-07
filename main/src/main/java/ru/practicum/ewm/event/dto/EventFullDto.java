@@ -2,18 +2,12 @@ package ru.practicum.ewm.event.dto;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.*;
-import org.hibernate.annotations.WhereJoinTable;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.event.enums.State;
 import ru.practicum.ewm.location.Location;
 import ru.practicum.ewm.user.dto.UserShortDto;
-import ru.practicum.ewm.user.model.User;
 
-import javax.persistence.*;
-import javax.validation.constraints.NotBlank;
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Getter
 @Setter

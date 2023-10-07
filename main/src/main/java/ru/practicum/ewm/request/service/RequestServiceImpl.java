@@ -28,7 +28,6 @@ import java.util.stream.Collectors;
 
 import static ru.practicum.ewm.request.mapper.RequestMapper.toParticipationRequestDto;
 
-@Slf4j
 @Service
 @RequiredArgsConstructor
 public class RequestServiceImpl implements RequestService {

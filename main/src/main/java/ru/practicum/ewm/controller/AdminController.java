@@ -30,7 +30,6 @@ import javax.validation.constraints.PositiveOrZero;
 import java.time.LocalDateTime;
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequestMapping("admin/")
 @RequiredArgsConstructor
@@ -91,8 +90,6 @@ public class AdminController {
                                              @RequestParam(defaultValue = "0") @Min(0) Integer from,
                                              @RequestParam(defaultValue = "10") @Min(1) Integer size) {
 
-        log.info("Admin GET request to get all events by params users-{}, states-{}, categories-{}" +
-                ",startTime-{}, endTime-{}", users,states,categories, rangeStart, rangeEnd);
         return eventService.getAdminEvents(users, states, categories, rangeStart, rangeEnd, from, size);
     }
 
