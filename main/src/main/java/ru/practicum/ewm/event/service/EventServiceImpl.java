@@ -26,6 +26,7 @@ import ru.practicum.ewm.user.repository.UserRepository;
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -63,6 +64,7 @@ public class EventServiceImpl implements EventService {
         newEvent.setState(State.PENDING);
         newEvent.setConfirmedRequests(0);
         newEvent.setViews(0);
+        newEvent.setParticipants(new HashSet<>());
 
         return EventMapper.toEventFullDto(eventRepository.save(newEvent));
     }
@@ -141,7 +143,6 @@ public class EventServiceImpl implements EventService {
                 throw new BadRequestException("The date and time for which the event is scheduled cannot be earlier than " +
                         "two hours from the current moment.");
             }
-                //event.setEventDate(updateEventUserRequest.getEventDate());
             if (updateEventUserRequest.getTitle() != null) {
                 event.setTitle(updateEventUserRequest.getTitle());
             }
@@ -158,27 +159,18 @@ public class EventServiceImpl implements EventService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<EventShortDto> getPublicEvents(String text, List<Long> categories, Boolean paid,
                                                LocalDateTime rangeStart, LocalDateTime rangeEnd,
                                                Boolean onlyAvailable, EventSortType sort,
                                                Integer from, Integer size, HttpServletRequest request) {
 
-        List<Event> events = new ArrayList<>();
-
-        if (categories != null && categories.size() == 1 && categories.get(0).equals(0L)) {
-            categories = null;
-        }
-        if (rangeStart == null) {
-            rangeStart = LocalDateTime.now();
-        } else if (rangeStart.isBefore(LocalDateTime.now().plusHours(2))) {
-            throw new BadRequestException("Event date for which the event is scheduled cannot be earlier than two hours from the current moment. Value: " + rangeStart);
-        }
-        if (rangeEnd == null) {
-            rangeEnd = LocalDateTime.now().plusYears(100);
+        if (rangeEnd != null && rangeEnd.isBefore(rangeStart)) {
+            throw new BadRequestException("End of range cannot be before start");
         }
 
         Pageable pageable = PageRequest.of(from, size);
-
+        List<Event> events = new ArrayList<>();
         if (sort != null && sort.equals(EventSortType.EVENT_DATE)) {
             events = eventRepository.findPublicSortByDate(text, categories, paid, rangeStart, rangeEnd, pageable);
         } else if (sort != null && sort.equals(EventSortType.VIEWS)) {
@@ -194,7 +186,7 @@ public class EventServiceImpl implements EventService {
                 .collect(Collectors.toList());
 
         while (eventShortDtoList.size() < size) {
-            eventShortDtoList.add(new EventShortDto());
+            eventShortDtoList.add(null);
         }
         saveEndpointHit(request);
         return eventShortDtoList;

@@ -69,7 +69,7 @@ public class ErrorHandler {
     @ExceptionHandler
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiError handleBadRequestExceptions(BadRequestException e) {
-        log.warn("Received status 403 FORBIDDEN: {}", e.getMessage(), e);
+        log.warn("Received status 400 BAD_REQUEST: {}", e.getMessage(), e);
         return new ApiError(HttpStatus.BAD_REQUEST, e.getMessage(),
                 "Received status 400 BAD_REQUEST",  LocalDateTime.now());
     }
