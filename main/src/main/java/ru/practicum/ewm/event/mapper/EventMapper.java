@@ -34,7 +34,7 @@ public class EventMapper {
                 .id(event.getId())
                 .annotation(event.getAnnotation())
                 .category(CategoryMapper.toCategoryDto(event.getCategory()))
-                .confirmedRequests(event.getConfirmedRequests())
+                .confirmedRequests(event.getParticipants().size())
                 .createdOn(event.getCreatedOn())
                 .description(event.getDescription())
                 .eventDate(event.getEventDate())
@@ -62,20 +62,6 @@ public class EventMapper {
                 .requestModeration(newEventDto.getRequestModeration())
                 .state(State.PENDING)
                 .title(newEventDto.getTitle())
-                .build();
-    }
-
-    public static Event toEventUpdateUserRequest(UpdateEventUserRequest updateEventUserRequest, Event event) {
-        return Event.builder()
-                .annotation(updateEventUserRequest.getAnnotation())
-                .description(updateEventUserRequest.getDescription())
-                .eventDate(updateEventUserRequest.getEventDate())
-                .paid(updateEventUserRequest.getPaid())
-                .location(updateEventUserRequest.getLocation() != null ?
-                        new Location(updateEventUserRequest.getLocation().getLat(),
-                                updateEventUserRequest.getLocation().getLon()) : null)
-                .participantLimit(updateEventUserRequest.getParticipantLimit())
-                .title(updateEventUserRequest.getTitle())
                 .build();
     }
 }

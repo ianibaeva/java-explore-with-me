@@ -25,10 +25,7 @@ import ru.practicum.ewm.user.repository.UserRepository;
 
 import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -62,8 +59,6 @@ public class EventServiceImpl implements EventService {
         newEvent.setCategory(category);
         newEvent.setCreatedOn(LocalDateTime.now());
         newEvent.setState(State.PENDING);
-        newEvent.setConfirmedRequests(0);
-        newEvent.setViews(0);
         newEvent.setParticipants(new HashSet<>());
 
         return EventMapper.toEventFullDto(eventRepository.save(newEvent));
@@ -253,6 +248,7 @@ public class EventServiceImpl implements EventService {
                 if (event.getState().equals(State.PENDING)) {
                     event.setState(State.PUBLISHED);
                     event.setPublishedOn(LocalDateTime.now());
+                    event.setViews(0);
                 } else {
                     throw new ConflictException(
                             "The event cannot be published due to its incorrect status: PENDING"

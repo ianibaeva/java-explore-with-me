@@ -78,6 +78,5 @@ public class Event {
             inverseJoinColumns = @JoinColumn(name = "requester_id"))
     private Set<User> participants = new HashSet<>();
 
-    @Column(name = "views")
     private Integer views;
 }
