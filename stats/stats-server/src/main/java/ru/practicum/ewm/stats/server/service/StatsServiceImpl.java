@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.stats.dto.EndpointHitDto;
 import ru.practicum.ewm.stats.dto.ViewStatsDto;
+import ru.practicum.ewm.stats.server.exception.BadRequestException;
 import ru.practicum.ewm.stats.server.mapper.StatsMapper;
 import ru.practicum.ewm.stats.server.model.EndpointHit;
 import ru.practicum.ewm.stats.server.model.ViewStats;
@@ -37,6 +38,10 @@ public class StatsServiceImpl implements StatsService {
     public List<ViewStatsDto> getStats(String start, String end, List<String> uris, Boolean unique) {
         LocalDateTime startDate = LocalDateTime.parse(start, FORMATTER);
         LocalDateTime endDate = LocalDateTime.parse(end, FORMATTER);
+
+        if (endDate.isBefore(startDate)) {
+            throw new BadRequestException("End date must be later than the start date");
+        }
 
         List<ViewStats> result;
         if (unique) {
