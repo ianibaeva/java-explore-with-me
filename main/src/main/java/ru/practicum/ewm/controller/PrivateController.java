@@ -4,6 +4,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+import ru.practicum.ewm.comment.dto.CommentDto;
+import ru.practicum.ewm.comment.dto.NewCommentDto;
+import ru.practicum.ewm.comment.service.CommentService;
 import ru.practicum.ewm.event.dto.EventFullDto;
 import ru.practicum.ewm.event.dto.EventShortDto;
 import ru.practicum.ewm.event.dto.NewEventDto;
@@ -27,6 +30,7 @@ public class PrivateController {
 
     private final EventService eventService;
     private final RequestService requestService;
+    private final CommentService commentService;
 
     @PostMapping("/{userId}/events")
     @ResponseStatus(HttpStatus.CREATED)
@@ -86,5 +90,27 @@ public class PrivateController {
                                                                          eventRequestStatusUpdateRequest) {
 
         return requestService.updateEventRequest(userId, eventId, eventRequestStatusUpdateRequest);
+    }
+
+    @PostMapping("/{userId}/events/{eventId}/comments")
+    @ResponseStatus(HttpStatus.CREATED)
+    public CommentDto addComment(@PathVariable Long userId,
+                                 @PathVariable Long eventId,
+                                 @RequestBody @Valid NewCommentDto newCommentDto) {
+        return commentService.addComment(userId, eventId, newCommentDto);
+    }
+
+    @PatchMapping("/{userId}/events/{eventId}/comments/{commentId}")
+    public CommentDto editComment(@PathVariable Long commentId,
+                                  @PathVariable Long userId,
+                                  @RequestBody @Valid NewCommentDto newCommentDto) {
+        return commentService.editComment(commentId, userId, newCommentDto);
+    }
+
+    @DeleteMapping("/{userId}/events/comments/{commentId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteComment(@PathVariable Long commentId,
+                              @PathVariable Long userId) {
+        commentService.deleteComment(commentId, userId);
     }
 }
