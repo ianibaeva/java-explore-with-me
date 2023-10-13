@@ -7,6 +7,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.ewm.category.model.Category;
 import ru.practicum.ewm.category.repository.CategoryRepository;
+import ru.practicum.ewm.comment.dto.CommentDto;
+import ru.practicum.ewm.comment.mapper.CommentMapper;
+import ru.practicum.ewm.comment.repository.CommentRepository;
 import ru.practicum.ewm.event.dto.*;
 import ru.practicum.ewm.event.enums.EventSortType;
 import ru.practicum.ewm.event.enums.State;
@@ -38,6 +41,7 @@ public class EventServiceImpl implements EventService {
     private final EventRepository eventRepository;
     private final UserRepository userRepository;
     private final CategoryRepository categoryRepository;
+    private final CommentRepository commentRepository;
     private final StatsClient statsClient;
 
     @Override
@@ -291,7 +295,15 @@ public class EventServiceImpl implements EventService {
         }
 
         event.setViews(event.getViews() + 1);
-        return EventMapper.toEventFullDto(event);
+        EventFullDto eventFullDto = EventMapper.toEventFullDto(event);
+
+        List<CommentDto> comments = commentRepository.getCommentsByEventId(eventId).stream()
+                .map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
+
+        eventFullDto.setComments(comments);
+
+        return eventFullDto;
     }
 
     private void saveEndpointHit(HttpServletRequest request) {

@@ -8,6 +8,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import ru.practicum.ewm.category.dto.CategoryDto;
 import ru.practicum.ewm.category.service.CategoryService;
+import ru.practicum.ewm.comment.dto.CommentDto;
+import ru.practicum.ewm.comment.enums.CommentSort;
+import ru.practicum.ewm.comment.service.CommentService;
 import ru.practicum.ewm.compilation.dto.CompilationDto;
 import ru.practicum.ewm.compilation.service.CompilationService;
 import ru.practicum.ewm.event.dto.EventFullDto;
@@ -28,6 +31,7 @@ public class PublicController {
     private final CategoryService categoryService;
     private final EventService eventService;
     private final CompilationService compilationService;
+    private final CommentService commentService;
 
     @GetMapping("/categories")
     public List<CategoryDto> getCategories(@PositiveOrZero @RequestParam(value = "from", defaultValue = "0") Integer from,
@@ -71,5 +75,13 @@ public class PublicController {
     @GetMapping("/compilations/{compId}")
     public CompilationDto getCompilationById(@PathVariable Long compId) {
         return compilationService.getCompilationById(compId);
+    }
+
+    @GetMapping("/comments")
+    public List<CommentDto> getComments(@PathVariable Long eventId,
+                                        @RequestParam(required = false, defaultValue = "DESC") CommentSort sort,
+                                        @RequestParam(defaultValue = "0") @PositiveOrZero Integer from,
+                                        @RequestParam(defaultValue = "10") @Positive Integer size) {
+        return commentService.getComments(eventId, sort, from, size);
     }
 }
